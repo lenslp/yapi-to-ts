@@ -1,0 +1,98 @@
+{
+  "name": "end-type-to-front-type",
+  "version": "1.0.0",
+  "description": "根据 YApi 的接口定义生成 TypeScript/JavaScript 的接口类型及其请求函数代码。",
+  "keywords": [
+    "yapi",
+    "codegen",
+    "typescript"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "zhaoyao",
+    "email": "zhaoyao@uni-ubi.com"
+  },
+  "sideEffects": false,
+  "main": "lib/cjs/index.js",
+  "module": "lib/esm/index.js",
+  "types": "lib/esm/index.d.ts",
+  "bin": {
+    "ytt": "lib/cjs/cli.js"
+  },
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "build": "shx rm -rf ./lib && tsc -P tsconfig.esm.json && tsc -P tsconfig.cjs.json",
+    "docs": "typedoc --out docs --theme minimal --mode file src/types.ts && gh-pages --dist docs --dest v3",
+    "release": "yarn testOnly && standard-version -a && yarn build && git push --follow-tags origin master && yarn docs && npm publish",
+    "releaseBeta": "yarn testOnly && standard-version -a --release-as patch --prerelease beta && yarn build && git push --follow-tags origin master && npm publish --tag next",
+    "test": "jest --coverage",
+    "testApi": "ts-node -T src/cli.ts",
+    "testOnly": "jest"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{css,less,scss,sass,html,htm,vue,yml,yaml,json,md}": [
+      "prettier --write"
+    ],
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ]
+  },
+  "dependencies": {
+    "@types/json-schema": "^7.0.1",
+    "change-case": "^3.0.2",
+    "consola": "^2.3.0",
+    "dayjs": "^1.8.32",
+    "form-data": "^3.0.0",
+    "fs-extra": "^7.0.1",
+    "get-port": "^5.1.1",
+    "got": "^11.5.1",
+    "json-schema-to-typescript": "^10.0.2",
+    "json5": "^2.1.0",
+    "mockjs": "^1.0.1-beta3",
+    "ora": "^3.4.0",
+    "prettier": "^1.19.1",
+    "prompts": "^2.0.4",
+    "signal-exit": "^3.0.3",
+    "swagger-client": "^3.12.0",
+    "to-json-schema": "^0.2.5",
+    "ts-node": "^8.0.2",
+    "tslib": "^2.0.0",
+    "typescript": "^3.9.7",
+    "vtils": "^3.32.1"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^5.0.4",
+    "@types/json5": "^0.0.30",
+    "@types/mockjs": "^1.0.2",
+    "@types/node": "^10.12.10",
+    "@types/prompts": "^1.2.0",
+    "@types/react": "^16.9.2",
+    "@types/signal-exit": "^3.0.0",
+    "@types/swagger-schema-official": "^2.0.21",
+    "@types/to-json-schema": "^0.2.0",
+    "codecov": "^3",
+    "eslint": "^7",
+    "gh-pages": "^2.0.1",
+    "haoma": "^2.3.0",
+    "husky": "^4",
+    "jest": "^26",
+    "lint-staged": "^10",
+    "openapi-types": "^7.0.1",
+    "shx": "^0.3.2",
+    "standard-version": "^4.4.0",
+    "tempy": "^0.3.0",
+    "typedoc": "^0.14.2",
+    "typescript-snapshots-plugin": "^1.7.0"
+  },
+  "engines": {
+    "node": ">=10.19.0"
+  }
+}
