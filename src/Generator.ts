@@ -173,7 +173,7 @@ export class Generator {
                         this.options.cwd,
                         syntheticalConfig.outputFilePath!,
                       )
-                      const categoryUID = `_${serverIndex}_${projectIndex}_${categoryIndex}_${categoryIndex2}`
+                      // const categoryUID = `_${serverIndex}_${projectIndex}_${categoryIndex}_${categoryIndex2}`
                       const categoryCode =
                         interfaceList.length === 0
                           ? ''
@@ -192,7 +192,7 @@ export class Generator {
                                   return this.generateInterfaceCode(
                                     syntheticalConfig,
                                     interfaceInfo,
-                                    categoryUID,
+                                    // categoryUID,
                                   )
                                 }),
                               )),
@@ -689,7 +689,9 @@ export class Generator {
               return request(${JSON.stringify(extendedInterfaceInfo.path)}, {
                 method: Method.${extendedInterfaceInfo.method},
                 ${
-                  Method[extendedInterfaceInfo.method] === 'POST'
+                  Method[extendedInterfaceInfo.method] === 'POST' ||
+                  Method[extendedInterfaceInfo.method] === 'PUT' ||
+                  Method[extendedInterfaceInfo.method] === 'PATCH'
                     ? `data`
                     : 'params'
                 }: params
