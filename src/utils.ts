@@ -227,8 +227,6 @@ export async function jsonSchemaToType(
   jsonSchema: JSONSchema4,
   typeName: string,
 ): Promise<string> {
-  console.log(jsonSchema, 'jsonSchema')
-
   if (isEmpty(jsonSchema)) {
     return `export interface ${typeName} {}`
   }
