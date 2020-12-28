@@ -227,13 +227,17 @@ export async function jsonSchemaToType(
   jsonSchema: JSONSchema4,
   typeName: string,
 ): Promise<string> {
+  console.log(jsonSchema, 'jsonSchema')
+
   if (isEmpty(jsonSchema)) {
     return `export interface ${typeName} {}`
   }
-  if (jsonSchema.__is_any__) {
-    delete jsonSchema.__is_any__
-    return `export type ${typeName} = any`
-  }
+
+  if (jsonSchema)
+    if (jsonSchema.__is_any__) {
+      delete jsonSchema.__is_any__
+      return `export type ${typeName} = any`
+    }
   // JSTT 会转换 typeName，因此传入一个全大写的假 typeName，生成代码后再替换回真正的 typeName
   const fakeTypeName = 'THISISAFAKETYPENAME'
   const code = await compile(jsonSchema, fakeTypeName, JSTTOptions)
@@ -349,6 +353,8 @@ export function getResponseDataJsonSchema(
     jsonSchema.properties[dataKey]
   ) {
     jsonSchema = jsonSchema.properties[dataKey]
+  } else {
+    jsonSchema = {}
   }
 
   return jsonSchema

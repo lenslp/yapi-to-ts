@@ -25,7 +25,6 @@ import {
   Method,
   Project,
   ProjectConfig,
-  RequestBodyType,
   ServerConfig,
   SyntheticalConfig,
 } from './types'
@@ -74,8 +73,6 @@ export class Generator {
           this.disposes.push(() => swaggerToYApiServer.stop())
         }
         if (item.serverUrl) {
-          // 去除地址后面的 /
-          // fix: https://github.com/fjc0k/yapi-to-typescript/issues/22
           item.serverUrl = item.serverUrl.replace(/\/+$/, '')
         }
         return item
@@ -176,27 +173,12 @@ export class Generator {
                         this.options.cwd,
                         syntheticalConfig.outputFilePath!,
                       )
-                      const categoryUID = `_${serverIndex}_${projectIndex}_${categoryIndex}_${categoryIndex2}`
+                      // const categoryUID = `_${serverIndex}_${projectIndex}_${categoryIndex}_${categoryIndex2}`
                       const categoryCode =
                         interfaceList.length === 0
                           ? ''
                           : [
-                              syntheticalConfig.typesOnly
-                                ? ''
-                                : dedent`
-                                  const mockUrl${categoryUID} = ${JSON.stringify(
-                                    syntheticalConfig.mockUrl,
-                                  )} as any
-                                  const devUrl${categoryUID} = ${JSON.stringify(
-                                    syntheticalConfig.devUrl,
-                                  )} as any
-                                  const prodUrl${categoryUID} = ${JSON.stringify(
-                                    syntheticalConfig.prodUrl,
-                                  )} as any
-                                  const dataKey${categoryUID} = ${JSON.stringify(
-                                    syntheticalConfig.dataKey,
-                                  )} as any
-                                `,
+                              syntheticalConfig.typesOnly ? '' : dedent``,
                               ...(await Promise.all(
                                 interfaceList.map(async interfaceInfo => {
                                   interfaceInfo = isFunction(
@@ -210,7 +192,7 @@ export class Generator {
                                   return this.generateInterfaceCode(
                                     syntheticalConfig,
                                     interfaceInfo,
-                                    categoryUID,
+                                    // categoryUID,
                                   )
                                 }),
                               )),
@@ -306,7 +288,7 @@ export class Generator {
           syntheticalConfig,
         } = outputFileList[outputFilePath]
 
-        const rawRequestFunctionFilePath = requestFunctionFilePath
+        // const rawRequestFunctionFilePath = requestFunctionFilePath
         const rawRequestHookMakerFilePath = requestHookMakerFilePath
 
         // 支持 .jsx? 后缀
@@ -321,48 +303,6 @@ export class Generator {
         )
 
         if (!syntheticalConfig.typesOnly) {
-          if (!(await fs.pathExists(rawRequestFunctionFilePath))) {
-            await fs.outputFile(
-              requestFunctionFilePath,
-              dedent`
-                import { RequestFunctionParams } from 'yapi-to-typescript'
-
-                export interface RequestOptions {
-                  /**
-                   * 使用的服务器。
-                   *
-                   * - \`prod\`: 生产服务器
-                   * - \`dev\`: 测试服务器
-                   * - \`mock\`: 模拟服务器
-                   *
-                   * @default prod
-                   */
-                  server?: 'prod' | 'dev' | 'mock',
-                }
-
-                export default function request<TResponseData>(
-                  payload: RequestFunctionParams,
-                  options: RequestOptions = {
-                    server: 'prod',
-                  },
-                ): Promise<TResponseData> {
-                  return new Promise<TResponseData>((resolve, reject) => {
-                    // 基本地址
-                    const baseUrl = options.server === 'mock'
-                      ? payload.mockUrl
-                      : options.server === 'dev'
-                        ? payload.devUrl
-                        : payload.prodUrl
-
-                    // 请求地址
-                    const url = \`\${baseUrl}\${payload.path}\`
-
-                    // 具体请求逻辑
-                  })
-                }
-              `,
-            )
-          }
           if (
             syntheticalConfig.reactHooks &&
             syntheticalConfig.reactHooks.enabled &&
@@ -372,7 +312,7 @@ export class Generator {
               requestHookMakerFilePath,
               dedent`
                 import { useState, useEffect } from 'react'
-                import { RequestConfig } from 'yapi-to-typescript'
+                import { RequestConfig } from 'end-type-to-front-type'
                 import { Request } from ${JSON.stringify(
                   getNormalizedRelativePath(
                     requestHookMakerFilePath,
@@ -419,7 +359,7 @@ export class Generator {
           /* tslint:disable */
           /* eslint-disable */
 
-          /* 该文件由 yapi-to-typescript 自动生成，请勿直接修改！！！ */
+          /* 该文件由 end-type-to-front-type 自动生成，请勿直接修改！！！ */
 
           ${
             syntheticalConfig.typesOnly
@@ -427,14 +367,9 @@ export class Generator {
               : dedent`
                 // @ts-ignore
                 // prettier-ignore
-                import { Method, RequestBodyType, ResponseBodyType, RequestConfig, RequestFunctionRestArgs, FileData, prepare } from 'yapi-to-typescript'
+                import { Method, RequestBodyType, ResponseBodyType, RequestConfig, RequestFunctionRestArgs, FileData, prepare } from 'end-type-to-front-type'
+                import request from '@/utils/request';
                 // @ts-ignore
-                import request from ${JSON.stringify(
-                  getNormalizedRelativePath(
-                    outputFilePath,
-                    requestFunctionFilePath,
-                  ),
-                )}
                 ${
                   !syntheticalConfig.reactHooks ||
                   !syntheticalConfig.reactHooks.enabled
@@ -449,45 +384,6 @@ export class Generator {
                       )}
                     `
                 }
-
-                // makeRequest
-                function makeRequestRequired<TReqeustData, TResponseData, TRequestConfig extends RequestConfig>(requestConfig: TRequestConfig) {
-                  const req = function (requestData: TReqeustData, ...args: RequestFunctionRestArgs<typeof request>) {
-                    return request<TResponseData>(prepare(requestConfig, requestData), ...args)
-                  }
-                  req.requestConfig = requestConfig
-                  return req
-                }
-                function makeRequestOptional<TReqeustData, TResponseData, TRequestConfig extends RequestConfig>(requestConfig: TRequestConfig) {
-                  const req = function (requestData?: TReqeustData, ...args: RequestFunctionRestArgs<typeof request>) {
-                    return request<TResponseData>(prepare(requestConfig, requestData), ...args)
-                  }
-                  req.requestConfig = requestConfig
-                  return req
-                }
-                function makeRequest<TReqeustData, TResponseData, TRequestConfig extends RequestConfig>(requestConfig: TRequestConfig) {
-                  const optional = makeRequestOptional<TReqeustData, TResponseData, TRequestConfig>(requestConfig)
-                  const required = makeRequestRequired<TReqeustData, TResponseData, TRequestConfig>(requestConfig)
-                  return (
-                      requestConfig.requestDataOptional
-                        ? optional
-                        : required
-                    ) as (
-                      TRequestConfig['requestDataOptional'] extends true
-                        ? typeof optional
-                        : typeof required
-                    )
-                }
-
-                // Request
-                export type Request<TReqeustData, TRequestConfig extends RequestConfig, TRequestResult> = (
-                  TRequestConfig['requestDataOptional'] extends true
-                    ? (requestData?: TReqeustData, ...args: RequestFunctionRestArgs<typeof request>) => TRequestResult
-                    : (requestData: TReqeustData, ...args: RequestFunctionRestArgs<typeof request>) => TRequestResult
-                ) & {
-                  requestConfig: TRequestConfig
-                }
-
                 ${content.join('\n\n').trim()}
               `
           }
@@ -628,6 +524,7 @@ export class Generator {
         project_id: projectInfo._id,
       },
     )
+
     return {
       ...projectInfo,
       cats: projectCats,
@@ -648,7 +545,7 @@ export class Generator {
   async generateInterfaceCode(
     syntheticalConfig: SyntheticalConfig,
     interfaceInfo: Interface,
-    categoryUID: string,
+    // categoryUID: string,
   ) {
     const extendedInterfaceInfo: ExtendedInterface = {
       ...interfaceInfo,
@@ -662,10 +559,10 @@ export class Generator {
           changeCase,
         )
       : changeCase.camelCase(extendedInterfaceInfo.parsedPath.name)
-    const requestConfigName = changeCase.camelCase(
-      `${requestFunctionName}RequestConfig`,
-    )
-    const requestConfigTypeName = changeCase.pascalCase(requestConfigName)
+    // const requestConfigName = changeCase.camelCase(
+    //   `${requestFunctionName}RequestConfig`,
+    // )
+    // const requestConfigTypeName = changeCase.pascalCase(requestConfigName)
     const requestDataTypeName = isFunction(
       syntheticalConfig.getRequestDataTypeName,
     )
@@ -697,33 +594,33 @@ export class Generator {
       responseDataJsonSchema,
       responseDataTypeName,
     )
-    const isRequestDataOptional = /(\{\}|any)$/s.test(requestDataType)
-    const requestHookName =
-      syntheticalConfig.reactHooks && syntheticalConfig.reactHooks.enabled
-        ? isFunction(syntheticalConfig.reactHooks.getRequestHookName)
-          ? /* istanbul ignore next */
-            await syntheticalConfig.reactHooks.getRequestHookName(
-              extendedInterfaceInfo,
-              changeCase,
-            )
-          : `use${changeCase.pascalCase(requestFunctionName)}`
-        : ''
+    // const isRequestDataOptional = /(\{\}|any)$/s.test(requestDataType)
+    // const requestHookName =
+    //   syntheticalConfig.reactHooks && syntheticalConfig.reactHooks.enabled
+    //     ? isFunction(syntheticalConfig.reactHooks.getRequestHookName)
+    //       ? /* istanbul ignore next */
+    //         await syntheticalConfig.reactHooks.getRequestHookName(
+    //           extendedInterfaceInfo,
+    //           changeCase,
+    //         )
+    //       : `use${changeCase.pascalCase(requestFunctionName)}`
+    //     : ''
 
     // 支持路径参数
-    const paramNames = (
-      extendedInterfaceInfo.req_params /* istanbul ignore next */ || []
-    ).map(item => item.name)
-    const paramNamesLiteral = JSON.stringify(paramNames)
-    const paramNameType =
-      paramNames.length === 0 ? 'string' : `'${paramNames.join("' | '")}'`
+    // const paramNames = (
+    //   extendedInterfaceInfo.req_params /* istanbul ignore next */ || []
+    // ).map(item => item.name)
+    // const paramNamesLiteral = JSON.stringify(paramNames)
+    // const paramNameType =
+    //   paramNames.length === 0 ? 'string' : `'${paramNames.join("' | '")}'`
 
     // 支持查询参数
-    const queryNames = (
-      extendedInterfaceInfo.req_query /* istanbul ignore next */ || []
-    ).map(item => item.name)
-    const queryNamesLiteral = JSON.stringify(queryNames)
-    const queryNameType =
-      queryNames.length === 0 ? 'string' : `'${queryNames.join("' | '")}'`
+    // const queryNames = (
+    //   extendedInterfaceInfo.req_query /* istanbul ignore next */ || []
+    // ).map(item => item.name)
+    // const queryNamesLiteral = JSON.stringify(queryNames)
+    // const queryNameType =
+    //   queryNames.length === 0 ? 'string' : `'${queryNames.join("' | '")}'`
 
     // 转义标题中的 /
     const escapedTitle = String(extendedInterfaceInfo.title).replace(
@@ -770,96 +667,35 @@ export class Generator {
 
     return dedent`
       /**
-       * 接口 ${interfaceTitle} 的 **请求类型**
+       * 接口 ${interfaceTitle} 
        *
        ${interfaceExtraComments}
        */
+
+      /* **请求类型** */
       ${requestDataType.trim()}
 
-      /**
-       * 接口 ${interfaceTitle} 的 **返回类型**
-       *
-       ${interfaceExtraComments}
-       */
+      /* **返回类型** */
       ${responseDataType.trim()}
 
       ${
         syntheticalConfig.typesOnly
           ? ''
           : dedent`
-            /**
-             * 接口 ${interfaceTitle} 的 **请求配置的类型**
-             *
-             ${interfaceExtraComments}
-             */
-            type ${requestConfigTypeName} = Readonly<RequestConfig<
-              ${JSON.stringify(syntheticalConfig.mockUrl)},
-              ${JSON.stringify(syntheticalConfig.devUrl)},
-              ${JSON.stringify(syntheticalConfig.prodUrl)},
-              ${JSON.stringify(extendedInterfaceInfo.path)},
-              ${JSON.stringify(syntheticalConfig.dataKey) || 'undefined'},
-              ${paramNameType},
-              ${queryNameType},
-              ${JSON.stringify(isRequestDataOptional)}
-            >>
-
-            /**
-             * 接口 ${interfaceTitle} 的 **请求配置**
-             *
-             ${interfaceExtraComments}
-             */
-            const ${requestConfigName}: ${requestConfigTypeName} = {
-              mockUrl: mockUrl${categoryUID},
-              devUrl: devUrl${categoryUID},
-              prodUrl: prodUrl${categoryUID},
-              path: ${JSON.stringify(extendedInterfaceInfo.path)},
-              method: Method.${extendedInterfaceInfo.method},
-              requestBodyType: RequestBodyType.${
-                extendedInterfaceInfo.method === Method.GET
-                  ? RequestBodyType.query
-                  : extendedInterfaceInfo.req_body_type /* istanbul ignore next */ ||
-                    RequestBodyType.none
-              },
-              responseBodyType: ResponseBodyType.${
-                extendedInterfaceInfo.res_body_type
-              },
-              dataKey: dataKey${categoryUID},
-              paramNames: ${paramNamesLiteral},
-              queryNames: ${queryNamesLiteral},
-              requestDataOptional: ${JSON.stringify(isRequestDataOptional)},
-              requestDataJsonSchema: ${JSON.stringify(
-                syntheticalConfig.jsonSchema?.enabled &&
-                  syntheticalConfig.jsonSchema?.requestData !== false
-                  ? requestDataJsonSchema
-                  : {},
-              )},
-              responseDataJsonSchema: ${JSON.stringify(
-                syntheticalConfig.jsonSchema?.enabled &&
-                  syntheticalConfig.jsonSchema?.responseData !== false
-                  ? responseDataJsonSchema
-                  : {},
-              )},
-            }
-
-            /**
-             * 接口 ${interfaceTitle} 的 **请求函数**
-             *
-             ${interfaceExtraComments}
-             */
-            export const ${requestFunctionName} = makeRequest<${requestDataTypeName}, ${responseDataTypeName}, ${requestConfigTypeName}>(${requestConfigName})
-
-            ${
-              !syntheticalConfig.reactHooks ||
-              !syntheticalConfig.reactHooks.enabled
-                ? ''
-                : dedent`
-                  /**
-                   * 接口 ${interfaceTitle} 的 **React Hook**
-                   *
-                   ${interfaceExtraComments}
-                   */
-                  export const ${requestHookName} = makeRequestHook<${requestDataTypeName}, ${requestConfigTypeName}, ReturnType<typeof ${requestFunctionName}>>(${requestFunctionName})
-                `
+            /* **请求函数** */
+            export async function ${requestFunctionName}(params:${changeCase.pascalCase(
+              `${requestFunctionName}Request`,
+            )}): Promise<any> {
+              return request(${JSON.stringify(extendedInterfaceInfo.path)}, {
+                method: Method.${extendedInterfaceInfo.method},
+                ${
+                  Method[extendedInterfaceInfo.method] === 'POST' ||
+                  Method[extendedInterfaceInfo.method] === 'PUT' ||
+                  Method[extendedInterfaceInfo.method] === 'PATCH'
+                    ? `data`
+                    : 'params'
+                }: params
+              });
             }
           `
       }

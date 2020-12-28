@@ -533,21 +533,11 @@ export type Config = ServerConfig | ServerConfig[]
  * 请求配置。
  */
 export interface RequestConfig<
-  MockUrl extends string = any,
-  DevUrl extends string = any,
-  ProdUrl extends string = any,
   Path extends string = any,
-  DataKey extends string | undefined = any,
   ParamName extends string = any,
   QueryName extends string = any,
   RequestDataOptional extends boolean = any
 > {
-  /** 接口 Mock 地址，结尾无 `/` */
-  mockUrl: MockUrl
-  /** 接口测试环境地质，结尾无 `/` */
-  devUrl: DevUrl
-  /** 接口生产环境地址，结尾无 `/` */
-  prodUrl: ProdUrl
   /** 接口路径，以 `/` 开头 */
   path: Path
   /** 请求方法 */
@@ -556,8 +546,6 @@ export interface RequestConfig<
   requestBodyType: RequestBodyType
   /** 返回数据类型 */
   responseBodyType: ResponseBodyType
-  /** 数据所在键 */
-  dataKey: DataKey
   /** 路径参数的名称列表 */
   paramNames: ParamName[]
   /** 查询参数的名称列表 */

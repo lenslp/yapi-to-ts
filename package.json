@@ -17,7 +17,7 @@
   "module": "lib/esm/index.js",
   "types": "lib/esm/index.d.ts",
   "bin": {
-    "ytt": "lib/cjs/cli.js"
+    "moonPower": "lib/cjs/cli.js"
   },
   "files": [
     "lib"

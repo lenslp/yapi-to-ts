@@ -26,7 +26,7 @@ TSNode.register({
     esModuleInterop: true,
     allowSyntheticDefaultImports: true,
     importHelpers: false,
-    // 转换 js，支持在 ytt.config.js 里使用最新语法
+    // 转换 js，支持在 moonPower.config.js 里使用最新语法
     allowJs: true,
     lib: ['es2017'],
   },
@@ -36,8 +36,8 @@ export async function run(
   /* istanbul ignore next */
   cwd: string = process.cwd(),
 ) {
-  const configTSFile = path.join(cwd, 'ytt.config.ts')
-  const configJSFile = path.join(cwd, 'ytt.config.js')
+  const configTSFile = path.join(cwd, 'moonPower.config.ts')
+  const configJSFile = path.join(cwd, 'moonPower.config.js')
   const configTSFileExist = await fs.pathExists(configTSFile)
   const configJSFileExist =
     !configTSFileExist && (await fs.pathExists(configJSFile))
@@ -50,15 +50,12 @@ export async function run(
     console.log(
       `\n${dedent`
         # 用法
-          初始化配置文件: ytt init
-          生成代码: ytt
-          查看帮助: ytt help
-
-        # GitHub
-          https://github.com/fjc0k/yapi-to-typescript
+          初始化配置文件: moonPower makeUp
+          生成代码: moonPower
+          查看帮助: moonPower help
       `}\n`,
     )
-  } else if (cmd === 'init') {
+  } else if (cmd === 'makeUp') {
     if (configFileExist) {
       consola.info(`检测到配置文件: ${configFile}`)
       const answers = await prompt({
@@ -73,18 +70,18 @@ export async function run(
       name: 'configFileType',
       type: 'select',
       choices: [
-        { title: 'TypeScript(ytt.config.ts)', value: 'ts' },
-        { title: 'JavaScript(ytt.config.js)', value: 'js' },
+        { title: 'TypeScript(moonPower.config.ts)', value: 'ts' },
+        { title: 'JavaScript(moonPower.config.js)', value: 'js' },
       ],
     })
     await fs.outputFile(
       answers.configFileType === 'js' ? configJSFile : configTSFile,
       dedent`
-        import { defineConfig } from 'yapi-to-typescript'
+        import { defineConfig } from 'end-type-to-front-type'
 
         export default defineConfig([
           {
-            serverUrl: 'http://foo.bar',
+            serverUrl: 'http://yapi.uniubi.com:3000/',
             typesOnly: false,
             target: '${(answers.configFileType === 'js'
               ? 'javascript'
@@ -92,7 +89,7 @@ export async function run(
             reactHooks: {
               enabled: false,
             },
-            prodEnvName: 'production',
+            prodEnvName: 'local',
             outputFilePath: 'src/api/index.${answers.configFileType}',
             requestFunctionFilePath: 'src/api/request.${
               answers.configFileType
@@ -100,10 +97,10 @@ export async function run(
             dataKey: 'data',
             projects: [
               {
-                token: 'hello',
+                token: '从yapi项目内的设置->token配置，拷贝token',
                 categories: [
                   {
-                    id: 0,
+                    id: 0, // 这里是分类的id,用于修改接口驼峰，可以删除空数组传入
                     getRequestFunctionName(interfaceInfo, changeCase) {
                       return changeCase.camelCase(
                         interfaceInfo.parsedPath.name,
