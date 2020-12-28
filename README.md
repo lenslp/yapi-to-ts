@@ -1,38 +1,6 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/fjc0k/yapi-to-typescript/master/assets/logo.png" width="150" />
-</p>
-
-# YApi to TypeScript ![Test](https://github.com/fjc0k/yapi-to-typescript/workflows/Test/badge.svg) [![codecov](https://codecov.io/gh/fjc0k/yapi-to-typescript/branch/master/graph/badge.svg)](https://codecov.io/gh/fjc0k/yapi-to-typescript)
+# End Type to Front Type
 
 根据 [YApi](https://github.com/YMFE/yapi) 或 [Swagger](https://swagger.io/) 的接口定义生成 TypeScript/JavaScript 的接口类型及其请求函数代码。
-
-> 钉钉扫码加入交流群：
->
-> <img src="https://raw.githubusercontent.com/fjc0k/yapi-to-typescript/master/assets/dingtalk.jpg" width="400" />
-
-<!-- TOC depthFrom:2 -->
-
-- [预览](#预览)
-- [特性](#特性)
-- [环境要求](#环境要求)
-- [安装](#安装)
-- [使用](#使用)
-  - [生成配置文件](#生成配置文件)
-  - [修改配置文件](#修改配置文件)
-  - [生成代码](#生成代码)
-- [配置](#配置)
-  - [概论](#概论)
-  - [配置项](#配置项)
-- [参与贡献](#参与贡献)
-- [许可](#许可)
-
-<!-- /TOC -->
-
-## 预览
-
-<!-- <img src="./assets/preview.png" width="700" /> -->
-
-<img src="https://raw.githubusercontent.com/fjc0k/yapi-to-typescript/master/assets/preview.png?v=20190221" width="700" />
 
 ## 特性
 
@@ -51,46 +19,56 @@
 - `Node >= 10.19.0`
 - `YApi >= 1.5.12`
 
+## 使用前提
+
+切换内网源 http://npm.uniubi.com/
+
+推荐使用`nrm`切换
+
 ## 安装
 
 ```bash
 # yarn
-yarn add yapi-to-typescript
+yarn add end-type-to-front-type
 
 # 或者，npm
-npm i yapi-to-typescript --save
+npm i end-type-to-front-type --save
 ```
 
 ## 使用
 
-`yapi-to-typescript` 基于当前目录下的 `ytt.config.{ts,js}` 配置文件进行相关操作。
+`end-type-to-front-type` 基于当前目录下的 `moonPower.config.{ts,js}` 配置文件进行相关操作。
 
 ### 生成配置文件
 
-使用命令 `ytt init` 可在当前目录自动创建配置文件 `ytt.config.{ts,js}`，如果配置文件已存在，将会询问你是否覆盖：
+为了方便记忆，初始化命令`moonPower makeup`来源于 :girl: 美少女战士变身时的口号，此处可以也理解为变身，生成`moonPower.config.{ts,js}`文件
+
+使用命令 `moonPower makeup` 可在当前目录自动创建配置文件 `moonPower.config.{ts,js}`，如果配置文件已存在，将会询问你是否覆盖：
 
 ```bash
 # yarn
-yarn ytt init
+yarn moonPower makeup
 
 # 或者，npm
-npx ytt init
+npx moonPower makeup
 ```
 
 ### 修改配置文件
 
-打开当前目录下的 `ytt.config.{ts,js}` 配置文件，直接修改即可。[查看配置说明](http://fjc0k.github.io/yapi-to-typescript/interfaces/serverconfig.html)
+打开当前目录下的 `moonPower.config.{ts,js}` 配置文件，直接修改即可。
 
 ### 生成代码
 
-直接执行命令 `ytt` 即可抓取 `YApi` 的接口定义并生成相应的 `TypeScript`/`JavaScript` 代码：
+为了方便记忆，生成文件命令`moonPower`来源于 :girl: 美少女战士中的代表月亮消灭你，此处可以理解为发动终极技能，消灭了后端提供的接口文档，重生成为了前端的接口文档
+
+直接执行命令 `moonPower` 即可抓取 `YApi` 的接口定义并生成相应的 `TypeScript`/`JavaScript` 代码：
 
 ```bash
 # yarn
-yarn ytt
+yarn moonPower
 
 # 或者，npm
-npx ytt
+npx moonPower
 ```
 
 ## 配置
@@ -117,17 +95,6 @@ type Config = Servers
 - 如果存在相同的配置项，`分类级别` 的配置会覆盖 `项目级别`、 `服务器级别` 的配置项；
 - 如果存在相同的配置项，`项目级别` 的配置会覆盖 `服务器级别` 的配置项。
 
-### 配置项
-
-具体配置项见：[API 文档](http://fjc0k.github.io/yapi-to-typescript/v3/interfaces/serverconfig.html)。
-
-## 参与贡献
-
-为避免无用功，功能新增或变更请提 issue 由维护者评估后再决定是否继续；功能修复以及经评估可行的功能新增或变更请提 PR。
-
-- 安装依赖：`yarn`
-- 运行测试：`yarn test`
-
 ## 许可
 
-MIT (c) Jay Fong
+MIT (c) Zhao Yao

@@ -55,7 +55,7 @@ export async function run(
           查看帮助: moonPower help
       `}\n`,
     )
-  } else if (cmd === 'makeUp') {
+  } else if (cmd === 'makeup') {
     if (configFileExist) {
       consola.info(`检测到配置文件: ${configFile}`)
       const answers = await prompt({
@@ -100,7 +100,7 @@ export async function run(
                 token: '从yapi项目内的设置->token配置，拷贝token',
                 categories: [
                   {
-                    id: 0, // 这里是分类的id,用于修改接口驼峰，可以删除空数组传入
+                    id: 0, // 这里是分类的id
                     getRequestFunctionName(interfaceInfo, changeCase) {
                       return changeCase.camelCase(
                         interfaceInfo.parsedPath.name,
