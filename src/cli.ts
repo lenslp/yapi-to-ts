@@ -100,8 +100,9 @@ export async function run(
                 token: '从yapi项目内的设置->token配置，拷贝token',
                 categories: [
                   {
-                    id: 0, // 这里是分类的id
+                    id: 0, // 这里是分类的id，如果是空数组，那么将会执行所有的分类，如果填了，那么将执行填写的分类
                     getRequestFunctionName(interfaceInfo, changeCase) {
+                      // 这里是可以设置请求函数的名称，interfaceInfo.path可以获取到'/api/group'
                       return changeCase.camelCase(
                         interfaceInfo.parsedPath.name,
                       )

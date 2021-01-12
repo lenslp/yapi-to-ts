@@ -329,6 +329,13 @@ export interface SharedConfig {
   target?: 'typescript' | 'javascript'
 
   /**
+   * 是否是restful风格的接口
+   *
+   * @default false
+   */
+  restful?: boolean
+
+  /**
    * 是否只生成接口请求内容和返回内容的 TypeSript 类型，是则请求文件和请求函数都不会生成。
    *
    * @default false
@@ -438,6 +445,45 @@ export interface SharedConfig {
    * @returns 请求数据类型的名称
    */
   getRequestDataTypeName?(
+    interfaceInfo: ExtendedInterface,
+    changeCase: ChangeCase,
+  ): string
+
+  /**
+   * 获取请求数据类型的名称。
+   *
+   * @default changeCase.pascalCase(`${requestFunctionName}Query`)
+   * @param interfaceInfo 接口信息
+   * @param changeCase 常用的大小写转换函数集合对象
+   * @returns 请求数据类型的名称
+   */
+  getRequestQueryTypeName?(
+    interfaceInfo: ExtendedInterface,
+    changeCase: ChangeCase,
+  ): string
+
+  /**
+   * 获取请求数据类型的名称。
+   *
+   * @default changeCase.pascalCase(`${requestFunctionName}Body`)
+   * @param interfaceInfo 接口信息
+   * @param changeCase 常用的大小写转换函数集合对象
+   * @returns 请求数据类型的名称
+   */
+  getRequestBodyTypeName?(
+    interfaceInfo: ExtendedInterface,
+    changeCase: ChangeCase,
+  ): string
+
+  /**
+   * 获取请求数据类型的名称。
+   *
+   * @default changeCase.pascalCase(`${requestFunctionName}Params`)
+   * @param interfaceInfo 接口信息
+   * @param changeCase 常用的大小写转换函数集合对象
+   * @returns 请求数据类型的名称
+   */
+  getRequestParamsTypeName?(
     interfaceInfo: ExtendedInterface,
     changeCase: ChangeCase,
   ): string
