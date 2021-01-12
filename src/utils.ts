@@ -1,3 +1,4 @@
+import _ from 'lodash'
 import JSON5 from 'json5'
 import Mock from 'mockjs'
 import path from 'path'
@@ -14,6 +15,7 @@ import {
   RequestFormItemType,
   Required,
   ResponseBodyType,
+  SyntheticalConfig,
 } from './types'
 import { JSONSchema4 } from 'json-schema'
 
@@ -360,17 +362,37 @@ export function getResponseDataJsonSchema(
 
 export function getRequestQueryJsonSchema(
   interfaceInfo: Interface,
+  syntheticalConfig: SyntheticalConfig,
 ): JSONSchema4 {
   let jsonSchema!: JSONSchema4
 
   if (isArray(interfaceInfo.req_query) && interfaceInfo.req_query.length) {
     const queryJsonSchema = propDefinitionsToJsonSchema(
-      interfaceInfo.req_query.map<PropDefinition>(item => ({
-        name: item.name,
-        required: item.required === Required.true,
-        type: 'string',
-        comment: item.desc,
-      })),
+      interfaceInfo.req_query.map<PropDefinition>(item => {
+        let type = 'string'
+        if (
+          Array.isArray(syntheticalConfig.number) &&
+          syntheticalConfig.number.length
+        ) {
+          if (_.includes(syntheticalConfig.number, item.name)) {
+            type = 'number'
+          }
+        }
+        if (
+          Array.isArray(syntheticalConfig.boolean) &&
+          syntheticalConfig.boolean.length
+        ) {
+          if (_.includes(syntheticalConfig.boolean, item.name)) {
+            type = 'boolean'
+          }
+        }
+        return {
+          name: item.name,
+          required: item.required === Required.true,
+          type,
+          comment: item.desc,
+        } as PropDefinition
+      }),
     )
     /* istanbul ignore else */
     if (jsonSchema) {
@@ -425,17 +447,37 @@ export function getRequestBodyJsonSchema(
 
 export function getRequestParamsJsonSchema(
   interfaceInfo: Interface,
+  syntheticalConfig: SyntheticalConfig,
 ): JSONSchema4 {
   let jsonSchema!: JSONSchema4
 
   if (isArray(interfaceInfo.req_params) && interfaceInfo.req_params.length) {
     const paramsJsonSchema = propDefinitionsToJsonSchema(
-      interfaceInfo.req_params.map<PropDefinition>(item => ({
-        name: item.name,
-        required: true,
-        type: 'string',
-        comment: item.desc,
-      })),
+      interfaceInfo.req_params.map<PropDefinition>(item => {
+        let type = 'string'
+        if (
+          Array.isArray(syntheticalConfig.number) &&
+          syntheticalConfig.number.length
+        ) {
+          if (_.includes(syntheticalConfig.number, item.name)) {
+            type = 'number'
+          }
+        }
+        if (
+          Array.isArray(syntheticalConfig.boolean) &&
+          syntheticalConfig.boolean.length
+        ) {
+          if (_.includes(syntheticalConfig.boolean, item.name)) {
+            type = 'boolean'
+          }
+        }
+        return {
+          name: item.name,
+          required: true,
+          type,
+          comment: item.desc,
+        } as PropDefinition
+      }),
     )
     /* istanbul ignore else */
     if (jsonSchema) {

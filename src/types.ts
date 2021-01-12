@@ -321,6 +321,18 @@ export interface JsonSchemaConfig {
  */
 export interface SharedConfig {
   /**
+   * 自定义query/params中类型在字段
+   *
+   */
+  number?: string[]
+
+  /**
+   * 自定义query/params中类型在字段
+   *
+   */
+  boolean?: string[]
+
+  /**
    * 要生成的目标代码类型。
    * 默认为 `typescript`，若设为 `javascript`，会将生成的 `.ts` 文件转换为 `.js` + `.d.ts` 文件并删除原 `.ts` 文件。
    *
@@ -330,6 +342,7 @@ export interface SharedConfig {
 
   /**
    * 是否是restful风格的接口
+   * 如果是restful风格，请求函数名会带上请求方式
    *
    * @default false
    */
