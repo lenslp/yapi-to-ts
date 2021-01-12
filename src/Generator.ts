@@ -594,7 +594,9 @@ export class Generator {
       : changeCase.pascalCase(`${requestFunctionName}Query`)
     const requestQueryJsonSchema = getRequestQueryJsonSchema(
       extendedInterfaceInfo,
+      syntheticalConfig,
     )
+
     const requestQueryType = await jsonSchemaToType(
       requestQueryJsonSchema,
       requestQueryTypeName,
@@ -634,6 +636,7 @@ export class Generator {
       : changeCase.pascalCase(`${requestFunctionName}Params`)
     const requestParamsJsonSchema = getRequestParamsJsonSchema(
       extendedInterfaceInfo,
+      syntheticalConfig,
     )
     const requestParamsType = await jsonSchemaToType(
       requestParamsJsonSchema,

@@ -5,13 +5,15 @@ export default defineConfig([
     serverUrl: 'http://yapi.uniubi.com:3000/',
     typesOnly: false,
     restful: true,
+    boolean: [],
+    number: ['groupId', 'id', 'queryId'],
     target: 'typescript',
     reactHooks: {
       enabled: false,
     },
     prodEnvName: 'local',
-    outputFilePath: 'src/api/index.ts',
-    requestFunctionFilePath: 'src/api/request.ts',
+    outputFilePath: 'api/index.ts',
+    requestFunctionFilePath: 'api/request.ts',
     dataKey: 'data',
     projects: [
       {
