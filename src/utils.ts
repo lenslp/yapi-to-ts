@@ -227,8 +227,6 @@ export async function jsonSchemaToType(
   jsonSchema: JSONSchema4,
   typeName: string,
 ): Promise<string> {
-  console.log(jsonSchema, 'jsonSchema')
-
   if (isEmpty(jsonSchema)) {
     return `export interface ${typeName} {}`
   }
@@ -355,6 +353,103 @@ export function getResponseDataJsonSchema(
     jsonSchema = jsonSchema.properties[dataKey]
   } else {
     jsonSchema = {}
+  }
+
+  return jsonSchema
+}
+
+export function getRequestQueryJsonSchema(
+  interfaceInfo: Interface,
+): JSONSchema4 {
+  let jsonSchema!: JSONSchema4
+
+  if (isArray(interfaceInfo.req_query) && interfaceInfo.req_query.length) {
+    const queryJsonSchema = propDefinitionsToJsonSchema(
+      interfaceInfo.req_query.map<PropDefinition>(item => ({
+        name: item.name,
+        required: item.required === Required.true,
+        type: 'string',
+        comment: item.desc,
+      })),
+    )
+    /* istanbul ignore else */
+    if (jsonSchema) {
+      jsonSchema.properties = {
+        ...jsonSchema.properties,
+        ...queryJsonSchema.properties,
+      }
+      jsonSchema.required = [
+        ...(jsonSchema.required || []),
+        ...(queryJsonSchema.required || []),
+      ]
+    } else {
+      jsonSchema = queryJsonSchema
+    }
+  }
+
+  return jsonSchema
+}
+
+export function getRequestBodyJsonSchema(
+  interfaceInfo: Interface,
+): JSONSchema4 {
+  let jsonSchema!: JSONSchema4
+
+  switch (interfaceInfo.req_body_type) {
+    case RequestBodyType.form:
+      jsonSchema = propDefinitionsToJsonSchema(
+        interfaceInfo.req_body_form.map<PropDefinition>(item => ({
+          name: item.name,
+          required: item.required === Required.true,
+          type: (item.type === RequestFormItemType.file
+            ? 'file'
+            : 'string') as any,
+          comment: item.desc,
+        })),
+      )
+      break
+    case RequestBodyType.json:
+      if (interfaceInfo.req_body_other) {
+        jsonSchema = interfaceInfo.req_body_is_json_schema
+          ? jsonSchemaStringToJsonSchema(interfaceInfo.req_body_other)
+          : jsonToJsonSchema(JSON5.parse(interfaceInfo.req_body_other))
+      }
+      break
+    default:
+      /* istanbul ignore next */
+      break
+  }
+
+  return jsonSchema
+}
+
+export function getRequestParamsJsonSchema(
+  interfaceInfo: Interface,
+): JSONSchema4 {
+  let jsonSchema!: JSONSchema4
+
+  if (isArray(interfaceInfo.req_params) && interfaceInfo.req_params.length) {
+    const paramsJsonSchema = propDefinitionsToJsonSchema(
+      interfaceInfo.req_params.map<PropDefinition>(item => ({
+        name: item.name,
+        required: true,
+        type: 'string',
+        comment: item.desc,
+      })),
+    )
+    /* istanbul ignore else */
+    if (jsonSchema) {
+      jsonSchema.properties = {
+        ...jsonSchema.properties,
+        ...paramsJsonSchema.properties,
+      }
+      jsonSchema.required = [
+        ...(jsonSchema.required || []),
+        ...(paramsJsonSchema.required || []),
+      ]
+    } else {
+      jsonSchema = paramsJsonSchema
+    }
   }
 
   return jsonSchema

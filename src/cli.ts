@@ -55,7 +55,7 @@ export async function run(
           查看帮助: moonPower help
       `}\n`,
     )
-  } else if (cmd === 'makeUp') {
+  } else if (cmd === 'makeup') {
     if (configFileExist) {
       consola.info(`检测到配置文件: ${configFile}`)
       const answers = await prompt({
@@ -83,6 +83,7 @@ export async function run(
           {
             serverUrl: 'http://yapi.uniubi.com:3000/',
             typesOnly: false,
+            restful: true, //是否是restful风格的接口
             target: '${(answers.configFileType === 'js'
               ? 'javascript'
               : 'typescript') as Defined<ServerConfig['target']>}',
@@ -100,8 +101,9 @@ export async function run(
                 token: '从yapi项目内的设置->token配置，拷贝token',
                 categories: [
                   {
-                    id: 0, // 这里是分类的id,用于修改接口驼峰，可以删除空数组传入
+                    id: 0, // 这里是分类的id，如果是空数组，那么将会执行所有的分类，如果填了，那么将执行填写的分类。如果无特殊要求，建议传空数组
                     getRequestFunctionName(interfaceInfo, changeCase) {
+                      // 这里是可以设置请求函数的名称，interfaceInfo.path可以获取到'/api/group'。如果无需自定义配置，建议删除
                       return changeCase.camelCase(
                         interfaceInfo.parsedPath.name,
                       )

@@ -1,4 +1,5 @@
 import * as changeCase from 'change-case'
+import _ from 'lodash'
 import dayjs from 'dayjs'
 import fs from 'fs-extra'
 import got from 'got'
@@ -22,7 +23,6 @@ import {
   ExtendedInterface,
   Interface,
   InterfaceList,
-  Method,
   Project,
   ProjectConfig,
   ServerConfig,
@@ -31,13 +31,14 @@ import {
 import { exec } from 'child_process'
 import {
   getNormalizedRelativePath,
-  getRequestDataJsonSchema,
+  getRequestBodyJsonSchema,
+  getRequestParamsJsonSchema,
+  getRequestQueryJsonSchema,
   getResponseDataJsonSchema,
   jsonSchemaToType,
   throwError,
 } from './utils'
 import { SwaggerToYApiServer } from './SwaggerToYApiServer'
-
 interface OutputFileList {
   [outputFilePath: string]: {
     syntheticalConfig: SyntheticalConfig
@@ -103,170 +104,168 @@ export class Generator {
               ...serverConfig,
               ...projectConfig,
             })
-            await Promise.all(
-              projectConfig.categories.map(
-                async (categoryConfig, categoryIndex) => {
-                  // 分类处理
-                  // 数组化
-                  let categoryIds = castArray(categoryConfig.id)
-                  // 全部分类
-                  if (categoryIds.includes(0)) {
-                    categoryIds.push(...projectInfo.cats.map(cat => cat._id))
-                  }
-                  // 唯一化
-                  categoryIds = uniq(categoryIds)
-                  // 去掉被排除的分类
-                  const excludedCategoryIds = categoryIds
-                    .filter(id => id < 0)
-                    .map(Math.abs)
-                  categoryIds = categoryIds.filter(
-                    id => !excludedCategoryIds.includes(Math.abs(id)),
-                  )
-                  // 删除不存在的分类
-                  categoryIds = categoryIds.filter(
-                    id => !!projectInfo.cats.find(cat => cat._id === id),
-                  )
-                  // 顺序化
-                  categoryIds = categoryIds.sort()
 
-                  const codes = await Promise.all(
-                    categoryIds.map<
-                      Promise<{
-                        outputFilePath: string
-                        code: string
-                        weights: number[]
-                      }>
-                    >(async (id, categoryIndex2) => {
-                      categoryConfig = {
-                        ...categoryConfig,
-                        id: id,
-                      }
-                      const syntheticalConfig: SyntheticalConfig = {
-                        ...serverConfig,
-                        ...projectConfig,
-                        ...categoryConfig,
-                        mockUrl: projectInfo.getMockUrl(),
-                      }
-                      syntheticalConfig.target =
-                        syntheticalConfig.target || 'typescript'
-                      syntheticalConfig.devUrl = projectInfo.getDevUrl(
-                        syntheticalConfig.devEnvName!,
-                      )
-                      syntheticalConfig.prodUrl = projectInfo.getProdUrl(
-                        syntheticalConfig.prodEnvName!,
-                      )
-                      const interfaceList = (
-                        await this.fetchInterfaceList(syntheticalConfig)
-                      )
-                        .map(interfaceInfo => {
-                          // 实现 _project 字段
-                          interfaceInfo._project = omit(projectInfo, [
-                            'cats',
-                            'getMockUrl',
-                            'getDevUrl',
-                            'getProdUrl',
-                          ])
-                          return interfaceInfo
-                        })
-                        .sort((a, b) => a._id - b._id)
-                      const outputFilePath = path.resolve(
-                        this.options.cwd,
-                        syntheticalConfig.outputFilePath!,
-                      )
-                      // const categoryUID = `_${serverIndex}_${projectIndex}_${categoryIndex}_${categoryIndex2}`
-                      const categoryCode =
-                        interfaceList.length === 0
-                          ? ''
-                          : [
-                              syntheticalConfig.typesOnly ? '' : dedent``,
-                              ...(await Promise.all(
-                                interfaceList.map(async interfaceInfo => {
-                                  interfaceInfo = isFunction(
-                                    syntheticalConfig.preproccessInterface,
-                                  )
-                                    ? syntheticalConfig.preproccessInterface(
-                                        interfaceInfo,
-                                        changeCase,
-                                      )
-                                    : interfaceInfo
-                                  return this.generateInterfaceCode(
-                                    syntheticalConfig,
-                                    interfaceInfo,
-                                    // categoryUID,
-                                  )
-                                }),
-                              )),
-                            ].join('\n\n')
-                      if (!outputFileList[outputFilePath]) {
-                        outputFileList[outputFilePath] = {
-                          syntheticalConfig,
-                          content: [],
-                          requestFunctionFilePath: syntheticalConfig.requestFunctionFilePath
-                            ? path.resolve(
-                                this.options.cwd,
-                                syntheticalConfig.requestFunctionFilePath,
-                              )
-                            : path.join(
-                                path.dirname(outputFilePath),
-                                'request.ts',
-                              ),
-                          requestHookMakerFilePath:
-                            syntheticalConfig.reactHooks &&
-                            syntheticalConfig.reactHooks.enabled
-                              ? syntheticalConfig.reactHooks
-                                  .requestHookMakerFilePath
-                                ? path.resolve(
-                                    this.options.cwd,
-                                    syntheticalConfig.reactHooks
-                                      .requestHookMakerFilePath,
-                                  )
-                                : path.join(
-                                    path.dirname(outputFilePath),
-                                    'makeRequestHook.ts',
-                                  )
-                              : '',
-                        }
-                      }
-                      return {
-                        outputFilePath: outputFilePath,
-                        code: categoryCode,
-                        weights: [
-                          serverIndex,
-                          projectIndex,
-                          categoryIndex,
-                          categoryIndex2,
-                        ],
-                      }
-                    }),
-                  )
-                  for (const groupedCodes of values(
-                    groupBy(codes, item => item.outputFilePath),
-                  )) {
-                    groupedCodes.sort((a, b) => {
-                      const x = a.weights.length > b.weights.length ? b : a
-                      const minLen = Math.min(
-                        a.weights.length,
-                        b.weights.length,
-                      )
-                      const maxLen = Math.max(
-                        a.weights.length,
-                        b.weights.length,
-                      )
-                      x.weights.push(...new Array(maxLen - minLen).fill(0))
-                      const w = a.weights.reduce((w, _, i) => {
-                        if (w === 0) {
-                          w = a.weights[i] - b.weights[i]
-                        }
-                        return w
-                      }, 0)
-                      return w
-                    })
-                    outputFileList[groupedCodes[0].outputFilePath].content.push(
-                      ...groupedCodes.map(item => item.code),
+            // 如果什么都不填，获取全部数据
+            // 如果填了，只获取填写的数据
+            let categories: ProjectConfig['categories'] = []
+            if (projectConfig.categories.length) {
+              categories = projectConfig.categories
+            } else {
+              categories = projectInfo.cats.map((cat: CategoryList[0]) => {
+                return {
+                  id: cat._id,
+                }
+              })
+            }
+            await Promise.all(
+              categories.map(async (categoryConfig, categoryIndex) => {
+                // 分类处理
+                // 数组化
+                let categoryIds = castArray(categoryConfig.id)
+                // 全部分类
+                if (categoryIds.includes(0)) {
+                  categoryIds.push(...projectInfo.cats.map(cat => cat._id))
+                }
+                // 唯一化
+                categoryIds = uniq(categoryIds)
+                // 去掉被排除的分类
+                const excludedCategoryIds = categoryIds
+                  .filter(id => id < 0)
+                  .map(Math.abs)
+                categoryIds = categoryIds.filter(
+                  id => !excludedCategoryIds.includes(Math.abs(id)),
+                )
+                // 删除不存在的分类
+                categoryIds = categoryIds.filter(
+                  id => !!projectInfo.cats.find(cat => cat._id === id),
+                )
+                // 顺序化
+                categoryIds = categoryIds.sort()
+                const codes = await Promise.all(
+                  categoryIds.map<
+                    Promise<{
+                      outputFilePath: string
+                      code: string
+                      weights: number[]
+                    }>
+                  >(async (id, categoryIndex2) => {
+                    categoryConfig = {
+                      ...categoryConfig,
+                      id: id,
+                    }
+                    const syntheticalConfig: SyntheticalConfig = {
+                      ...serverConfig,
+                      ...projectConfig,
+                      ...categoryConfig,
+                      mockUrl: projectInfo.getMockUrl(),
+                    }
+                    syntheticalConfig.target =
+                      syntheticalConfig.target || 'typescript'
+                    const interfaceList = (
+                      await this.fetchInterfaceList(syntheticalConfig)
                     )
-                  }
-                },
-              ),
+                      .map(interfaceInfo => {
+                        // 实现 _project 字段
+                        interfaceInfo._project = omit(projectInfo, [
+                          'cats',
+                          'getMockUrl',
+                          'getDevUrl',
+                          'getProdUrl',
+                        ])
+                        return interfaceInfo
+                      })
+                      .sort((a, b) => a._id - b._id)
+                    const outputFilePath = path.resolve(
+                      this.options.cwd,
+                      syntheticalConfig.outputFilePath!,
+                    )
+                    // const categoryUID = `_${serverIndex}_${projectIndex}_${categoryIndex}_${categoryIndex2}`
+                    const categoryCode =
+                      interfaceList.length === 0
+                        ? ''
+                        : [
+                            syntheticalConfig.typesOnly ? '' : dedent``,
+                            ...(await Promise.all(
+                              interfaceList.map(async interfaceInfo => {
+                                interfaceInfo = isFunction(
+                                  syntheticalConfig.preproccessInterface,
+                                )
+                                  ? syntheticalConfig.preproccessInterface(
+                                      interfaceInfo,
+                                      changeCase,
+                                    )
+                                  : interfaceInfo
+                                return this.generateInterfaceCode(
+                                  syntheticalConfig,
+                                  interfaceInfo,
+                                  // categoryUID,
+                                )
+                              }),
+                            )),
+                          ].join('\n\n')
+                    if (!outputFileList[outputFilePath]) {
+                      outputFileList[outputFilePath] = {
+                        syntheticalConfig,
+                        content: [],
+                        requestFunctionFilePath: syntheticalConfig.requestFunctionFilePath
+                          ? path.resolve(
+                              this.options.cwd,
+                              syntheticalConfig.requestFunctionFilePath,
+                            )
+                          : path.join(
+                              path.dirname(outputFilePath),
+                              'request.ts',
+                            ),
+                        requestHookMakerFilePath:
+                          syntheticalConfig.reactHooks &&
+                          syntheticalConfig.reactHooks.enabled
+                            ? syntheticalConfig.reactHooks
+                                .requestHookMakerFilePath
+                              ? path.resolve(
+                                  this.options.cwd,
+                                  syntheticalConfig.reactHooks
+                                    .requestHookMakerFilePath,
+                                )
+                              : path.join(
+                                  path.dirname(outputFilePath),
+                                  'makeRequestHook.ts',
+                                )
+                            : '',
+                      }
+                    }
+                    return {
+                      outputFilePath: outputFilePath,
+                      code: categoryCode,
+                      weights: [
+                        serverIndex,
+                        projectIndex,
+                        categoryIndex,
+                        categoryIndex2,
+                      ],
+                    }
+                  }),
+                )
+                for (const groupedCodes of values(
+                  groupBy(codes, item => item.outputFilePath),
+                )) {
+                  groupedCodes.sort((a, b) => {
+                    const x = a.weights.length > b.weights.length ? b : a
+                    const minLen = Math.min(a.weights.length, b.weights.length)
+                    const maxLen = Math.max(a.weights.length, b.weights.length)
+                    x.weights.push(...new Array(maxLen - minLen).fill(0))
+                    const w = a.weights.reduce((w, _, i) => {
+                      if (w === 0) {
+                        w = a.weights[i] - b.weights[i]
+                      }
+                      return w
+                    }, 0)
+                    return w
+                  })
+                  outputFileList[groupedCodes[0].outputFilePath].content.push(
+                    ...groupedCodes.map(item => item.code),
+                  )
+                }
+              }),
             )
           }),
         )
@@ -356,7 +355,7 @@ export class Generator {
 
         // 始终写入主文件
         const rawOutputContent = dedent`
-          /* tslint:disable */
+          /* tslint-disable */
           /* eslint-disable */
 
           /* 该文件由 end-type-to-front-type 自动生成，请勿直接修改！！！ */
@@ -551,26 +550,96 @@ export class Generator {
       ...interfaceInfo,
       parsedPath: path.parse(interfaceInfo.path),
     }
-    const requestFunctionName = isFunction(
-      syntheticalConfig.getRequestFunctionName,
+    let requestFunctionName = ''
+    const pathArray = interfaceInfo.path.split('/')
+    const index = _.findIndex(pathArray, function(o) {
+      return o.indexOf('{') !== -1
+    })
+    const method = interfaceInfo.method
+    const isNotEmptyQuery =
+      Array.isArray(interfaceInfo.req_query) &&
+      interfaceInfo.req_query.length > 0
+    const isNotEmptyParams =
+      Array.isArray(interfaceInfo.req_params) &&
+      interfaceInfo.req_params.length > 0
+
+    // 配置文件获取是否是restful风格\
+    if (isFunction(syntheticalConfig.getRequestFunctionName)) {
+      requestFunctionName = await syntheticalConfig.getRequestFunctionName(
+        extendedInterfaceInfo,
+        changeCase,
+      )
+    } else {
+      if (isNotEmptyParams) {
+        requestFunctionName = syntheticalConfig.restful
+          ? changeCase.camelCase(`${method}_${pathArray[index - 1]}`)
+          : changeCase.camelCase(pathArray[index - 1])
+      } else {
+        requestFunctionName = syntheticalConfig.restful
+          ? changeCase.camelCase(
+              `${method}_${extendedInterfaceInfo.parsedPath.name}`,
+            )
+          : changeCase.camelCase(extendedInterfaceInfo.parsedPath.name)
+      }
+    }
+
+    // Query
+    const requestQueryTypeName = isFunction(
+      syntheticalConfig.getRequestQueryTypeName,
     )
-      ? await syntheticalConfig.getRequestFunctionName(
+      ? await syntheticalConfig.getRequestQueryTypeName(
           extendedInterfaceInfo,
           changeCase,
         )
-      : changeCase.camelCase(extendedInterfaceInfo.parsedPath.name)
-    // const requestConfigName = changeCase.camelCase(
-    //   `${requestFunctionName}RequestConfig`,
-    // )
-    // const requestConfigTypeName = changeCase.pascalCase(requestConfigName)
-    const requestDataTypeName = isFunction(
-      syntheticalConfig.getRequestDataTypeName,
+      : changeCase.pascalCase(`${requestFunctionName}Query`)
+    const requestQueryJsonSchema = getRequestQueryJsonSchema(
+      extendedInterfaceInfo,
     )
-      ? await syntheticalConfig.getRequestDataTypeName(
+    const requestQueryType = await jsonSchemaToType(
+      requestQueryJsonSchema,
+      requestQueryTypeName,
+    )
+
+    // Body
+    const requestBodyTypeName = isFunction(
+      syntheticalConfig.getRequestBodyTypeName,
+    )
+      ? await syntheticalConfig.getRequestBodyTypeName(
           extendedInterfaceInfo,
           changeCase,
         )
-      : changeCase.pascalCase(`${requestFunctionName}Request`)
+      : changeCase.pascalCase(`${requestFunctionName}Body`)
+    const requestBodyJsonSchema = getRequestBodyJsonSchema(
+      extendedInterfaceInfo,
+    )
+
+    const requestBodyType = await jsonSchemaToType(
+      requestBodyJsonSchema,
+      requestBodyTypeName,
+    )
+
+    const isNotEmptyBody =
+      requestBodyJsonSchema &&
+      requestBodyJsonSchema.properties &&
+      Object.keys(requestBodyJsonSchema.properties).length > 0
+
+    // Params
+    const requestParamsTypeName = isFunction(
+      syntheticalConfig.getRequestParamsTypeName,
+    )
+      ? await syntheticalConfig.getRequestParamsTypeName(
+          extendedInterfaceInfo,
+          changeCase,
+        )
+      : changeCase.pascalCase(`${requestFunctionName}Params`)
+    const requestParamsJsonSchema = getRequestParamsJsonSchema(
+      extendedInterfaceInfo,
+    )
+    const requestParamsType = await jsonSchemaToType(
+      requestParamsJsonSchema,
+      requestParamsTypeName,
+    )
+
     const responseDataTypeName = isFunction(
       syntheticalConfig.getResponseDataTypeName,
     )
@@ -579,13 +648,7 @@ export class Generator {
           changeCase,
         )
       : changeCase.pascalCase(`${requestFunctionName}Response`)
-    const requestDataJsonSchema = getRequestDataJsonSchema(
-      extendedInterfaceInfo,
-    )
-    const requestDataType = await jsonSchemaToType(
-      requestDataJsonSchema,
-      requestDataTypeName,
-    )
+
     const responseDataJsonSchema = getResponseDataJsonSchema(
       extendedInterfaceInfo,
       syntheticalConfig.dataKey,
@@ -665,6 +728,36 @@ export class Generator {
       .map(item => `* @${item.label} ${castArray(item.value).join(', ')}`)
       .join('\n')
 
+    let requestParameters = ''
+    if (isNotEmptyQuery) {
+      requestParameters += `query:${requestQueryTypeName},`
+    }
+    if (isNotEmptyBody) {
+      requestParameters += `body:${requestBodyTypeName},`
+    }
+    if (isNotEmptyParams) {
+      requestParameters += `params:${requestParamsTypeName},`
+    }
+
+    // 如果params不存在，直接是path，如果存在，需要组装
+    let requestPath = ''
+    if (isNotEmptyParams) {
+      const paramNames = (
+        extendedInterfaceInfo.req_params /* istanbul ignore next */ || []
+      ).map(item => item.name)
+      const orginalPath = pathArray.slice(0, index).filter(item => item !== '')
+      requestPath = orginalPath.join('/')
+      if (paramNames.length) {
+        for (let i = 0; i < paramNames.length; i++) {
+          const element = paramNames[i]
+          requestPath = `${requestPath}/\${params.${element}}`
+        }
+      }
+      requestPath = JSON.stringify(requestPath)
+    } else {
+      requestPath = JSON.stringify(extendedInterfaceInfo.path)
+    }
+
     return dedent`
       /**
        * 接口 ${interfaceTitle} 
@@ -672,8 +765,14 @@ export class Generator {
        ${interfaceExtraComments}
        */
 
-      /* **请求类型** */
-      ${requestDataType.trim()}
+      ${isNotEmptyQuery ? '/* **请求query类型** */' : ''}
+			${isNotEmptyQuery ? requestQueryType.trim() : ''}
+			
+			${isNotEmptyBody ? '/* **请求body类型** */' : ''}
+			${isNotEmptyBody ? requestBodyType.trim() : ''}
+			
+			${isNotEmptyParams ? '/* **请求params类型** */' : ''}
+      ${isNotEmptyParams ? requestParamsType.trim() : ''}
 
       /* **返回类型** */
       ${responseDataType.trim()}
@@ -683,18 +782,11 @@ export class Generator {
           ? ''
           : dedent`
             /* **请求函数** */
-            export async function ${requestFunctionName}(params:${changeCase.pascalCase(
-              `${requestFunctionName}Request`,
-            )}): Promise<any> {
-              return request(${JSON.stringify(extendedInterfaceInfo.path)}, {
-                method: Method.${extendedInterfaceInfo.method},
-                ${
-                  Method[extendedInterfaceInfo.method] === 'POST' ||
-                  Method[extendedInterfaceInfo.method] === 'PUT' ||
-                  Method[extendedInterfaceInfo.method] === 'PATCH'
-                    ? `data`
-                    : 'params'
-                }: params
+            export async function ${requestFunctionName}(${requestParameters}): Promise<any> {
+              return request(\`${requestPath.replace(/"/g, '')}\`, {
+								method: Method.${extendedInterfaceInfo.method},
+								${isNotEmptyQuery ? 'params: query,' : ''}
+								${isNotEmptyBody ? 'data: body,' : ''}
               });
             }
           `
