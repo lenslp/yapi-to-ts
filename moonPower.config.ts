@@ -5,6 +5,7 @@ export default defineConfig([
     serverUrl: 'http://yapi.uniubi.com:3000/',
     typesOnly: false,
     restful: true,
+    repeat: true,
     boolean: [],
     number: ['groupId', 'id', 'queryId'],
     target: 'typescript',

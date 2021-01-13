@@ -36,6 +36,7 @@ import {
   getRequestQueryJsonSchema,
   getResponseDataJsonSchema,
   jsonSchemaToType,
+  randomString,
   throwError,
 } from './utils'
 import { SwaggerToYApiServer } from './SwaggerToYApiServer'
@@ -571,15 +572,39 @@ export class Generator {
       )
     } else {
       if (isNotEmptyParams) {
-        requestFunctionName = syntheticalConfig.restful
-          ? changeCase.camelCase(`${method}_${pathArray[index - 1]}`)
-          : changeCase.camelCase(pathArray[index - 1])
+        // 补位
+        if (syntheticalConfig.repeat) {
+          const secondPath = pathArray[index - 2]
+            ? pathArray[index - 2]
+            : randomString(4)
+          requestFunctionName = syntheticalConfig.restful
+            ? changeCase.camelCase(
+                `${method}_${secondPath}_${pathArray[index - 1]}`,
+              )
+            : changeCase.camelCase(pathArray[index - 1])
+        } else {
+          requestFunctionName = syntheticalConfig.restful
+            ? changeCase.camelCase(`${method}_${pathArray[index - 1]}`)
+            : changeCase.camelCase(pathArray[index - 1])
+        }
       } else {
-        requestFunctionName = syntheticalConfig.restful
-          ? changeCase.camelCase(
-              `${method}_${extendedInterfaceInfo.parsedPath.name}`,
-            )
-          : changeCase.camelCase(extendedInterfaceInfo.parsedPath.name)
+        // 补位
+        if (syntheticalConfig.repeat) {
+          const secondPath = pathArray[pathArray.length - 2]
+            ? pathArray[pathArray.length - 2]
+            : randomString(4)
+          requestFunctionName = syntheticalConfig.restful
+            ? changeCase.camelCase(
+                `${method}_${secondPath}_${extendedInterfaceInfo.parsedPath.name}`,
+              )
+            : changeCase.camelCase(extendedInterfaceInfo.parsedPath.name)
+        } else {
+          requestFunctionName = syntheticalConfig.restful
+            ? changeCase.camelCase(
+                `${method}_${extendedInterfaceInfo.parsedPath.name}`,
+              )
+            : changeCase.camelCase(extendedInterfaceInfo.parsedPath.name)
+        }
       }
     }
 

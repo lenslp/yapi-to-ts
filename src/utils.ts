@@ -496,3 +496,18 @@ export function getRequestParamsJsonSchema(
 
   return jsonSchema
 }
+
+/**
+ * 生成随机数
+ * @param len {Number} 随机数位数，默认32位
+ * @return {String} 随机数
+ */
+export function randomString(len = 8) {
+  const chars = 'abcdefhijkmnopqrstwxyz'
+  const maxPos = chars.length
+  let pwd = ''
+  for (let i = 0; i < len; i++) {
+    pwd += chars.charAt(Math.floor(Math.random() * maxPos))
+  }
+  return pwd
+}
