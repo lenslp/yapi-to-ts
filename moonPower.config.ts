@@ -19,14 +19,12 @@ export default defineConfig([
     projects: [
       {
         token:
-          'a5bd581b9603509ecfa61402589ed48bd28a81b42b12998d6d9a0196d5856333',
+          '7653552845700e95aa556da860293d1e9221ac8ea9486d0d9947f3b73af61825',
         categories: [
-          // {
-          //   id: 31, // 这里是接口分类的id
-          //   getRequestFunctionName(interfaceInfo, changeCase) {
-          //     return changeCase.camelCase(interfaceInfo.parsedPath.name);
-          //   },
-          // },
+          {
+            id: 913, // 这里是接口分类的id
+            prefix: 'app',
+          },
           // {
           //   id: 34, // 这里是接口分类的id
           //   getRequestFunctionName(interfaceInfo, changeCase) {
@@ -57,12 +55,12 @@ export default defineConfig([
           //     return changeCase.camelCase(interfaceInfo.parsedPath.name);
           //   },
           // },
-          {
-            id: 49, // 这里是接口分类的id
-            // getRequestFunctionName(interfaceInfo, changeCase) {
-            //   return changeCase.camelCase(interfaceInfo.parsedPath.name);
-            // },
-          },
+          // {
+          //   id: 49, // 这里是接口分类的id
+          //   // getRequestFunctionName(interfaceInfo, changeCase) {
+          //   //   return changeCase.camelCase(interfaceInfo.parsedPath.name);
+          //   // },
+          // },
         ],
       },
     ],

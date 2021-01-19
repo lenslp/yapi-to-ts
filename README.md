@@ -102,6 +102,20 @@ type Config = Servers
 3. 🌟 优化了 interface 逻辑
 4. 🌟 优化了无入参时，无需填写参数
 
+## V1.1.2 迭代
+
+1. ⭐ 增加 query 和 params 的 number 和 boolean 类型指定
+
+## V1.1.3 迭代
+
+1. ⭐ 增加 restful 风格下请求函数名重复处理
+
+## V1.1.4 迭代
+
+1. ⭐ 增加 param 使用 by 连接
+2. ⭐ 增加 prefix，使用于路径的前缀后端未填写的情况
+3. 🌟 优化省略 param 参数，以及 repeat 为 true 时采取所有的路径拼接为函数名
+
 ## 许可
 
 MIT (c) Zhao Yao
