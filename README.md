@@ -116,6 +116,10 @@ type Config = Servers
 2. ⭐ 增加 prefix，使用于路径的前缀后端未填写的情况
 3. 🌟 优化省略 param 参数，以及 repeat 为 true 时采取所有的路径拼接为函数名
 
+## V1.1.5 迭代
+
+1. 🌟 优化了识别 body 内容为数组的情况，无法生成的问题
+
 ## 许可
 
 MIT (c) Zhao Yao

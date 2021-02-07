@@ -652,8 +652,10 @@ export class Generator {
 
     const isNotEmptyBody =
       requestBodyJsonSchema &&
-      requestBodyJsonSchema.properties &&
-      Object.keys(requestBodyJsonSchema.properties).length > 0
+      ((requestBodyJsonSchema.type === 'object' &&
+        requestBodyJsonSchema.properties &&
+        Object.keys(requestBodyJsonSchema.properties).length > 0) ||
+        requestBodyJsonSchema.type === 'array')
 
     // Params
     const requestParamsTypeName = isFunction(
