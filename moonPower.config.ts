@@ -19,11 +19,10 @@ export default defineConfig([
     projects: [
       {
         token:
-          '7653552845700e95aa556da860293d1e9221ac8ea9486d0d9947f3b73af61825',
+          '6b75c91582ac37b26d4423983e12d9e03566c86f37953378cb7faa1f1421505c',
         categories: [
           {
-            id: 913, // 这里是接口分类的id
-            prefix: 'app',
+            id: 724, // 这里是接口分类的id
           },
           // {
           //   id: 34, // 这里是接口分类的id

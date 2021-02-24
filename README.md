@@ -120,6 +120,10 @@ type Config = Servers
 
 1. 🌟 优化了识别 body 内容为数组的情况，无法生成的问题
 
+## V1.1.6 迭代
+
+1. 🌟 Response 内全部字段必然是存在的
+
 ## 许可
 
 MIT (c) Zhao Yao
