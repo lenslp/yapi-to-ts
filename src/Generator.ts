@@ -567,6 +567,8 @@ export class Generator {
       Array.isArray(interfaceInfo.req_params) &&
       interfaceInfo.req_params.length > 0
 
+    let parametersArray: string[] = []
+
     // 配置文件获取是否是restful风格\
     if (isFunction(syntheticalConfig.getRequestFunctionName)) {
       requestFunctionName = await syntheticalConfig.getRequestFunctionName(
@@ -575,9 +577,10 @@ export class Generator {
       )
     } else {
       if (isNotEmptyParams) {
-        const parametersArray = _.filter(originalPathArray, function(o) {
+        parametersArray = _.filter(originalPathArray, function(o) {
           return o.indexOf('{') !== -1
         }).map(item => item.replace(/[{}]/g, ''))
+
         // 补位
         if (syntheticalConfig.repeat) {
           if (syntheticalConfig.restful) {
@@ -776,14 +779,16 @@ export class Generator {
 
     // 如果params不存在，直接是path，如果存在，需要组装
     let requestPath = ''
+
     if (isNotEmptyParams) {
-      const paramNames = (
-        extendedInterfaceInfo.req_params /* istanbul ignore next */ || []
-      ).map(item => item.name)
+      // const paramNames = (
+      //   extendedInterfaceInfo.req_params.sort(compare) /* istanbul ignore next */ || []
+      // ).map(item => item.name)
+
       requestPath = pathArray.join('/')
-      if (paramNames.length) {
-        for (let i = 0; i < paramNames.length; i++) {
-          const element = paramNames[i]
+      if (parametersArray.length) {
+        for (let i = 0; i < parametersArray.length; i++) {
+          const element = parametersArray[i]
           requestPath = `${requestPath}/\${params.${element}}`
         }
       }
