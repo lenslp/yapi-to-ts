@@ -333,6 +333,18 @@ export interface SharedConfig {
   boolean?: string[]
 
   /**
+   * 由于resful风格产生了重复的函数名
+   *
+   */
+  repeat?: boolean
+
+  /**
+   * 路径前缀
+   *
+   */
+  prefix?: string
+
+  /**
    * 要生成的目标代码类型。
    * 默认为 `typescript`，若设为 `javascript`，会将生成的 `.ts` 文件转换为 `.js` + `.d.ts` 文件并删除原 `.ts` 文件。
    *

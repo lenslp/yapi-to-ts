@@ -550,11 +550,15 @@ export class Generator {
       ...interfaceInfo,
       parsedPath: path.parse(interfaceInfo.path),
     }
+
     let requestFunctionName = ''
-    const pathArray = interfaceInfo.path.split('/')
-    const index = _.findIndex(pathArray, function(o) {
-      return o.indexOf('{') !== -1
+    const originalPathArray = interfaceInfo.path.split('/')
+
+    let pathArray = interfaceInfo.path.split('/')
+    pathArray = _.filter(pathArray, function(o) {
+      return o.indexOf('{') === -1 && o !== ''
     })
+    const pathLength = pathArray.length
     const method = interfaceInfo.method
     const isNotEmptyQuery =
       Array.isArray(interfaceInfo.req_query) &&
@@ -562,6 +566,8 @@ export class Generator {
     const isNotEmptyParams =
       Array.isArray(interfaceInfo.req_params) &&
       interfaceInfo.req_params.length > 0
+
+    let parametersArray: string[] = []
 
     // 配置文件获取是否是restful风格\
     if (isFunction(syntheticalConfig.getRequestFunctionName)) {
@@ -571,15 +577,42 @@ export class Generator {
       )
     } else {
       if (isNotEmptyParams) {
-        requestFunctionName = syntheticalConfig.restful
-          ? changeCase.camelCase(`${method}_${pathArray[index - 1]}`)
-          : changeCase.camelCase(pathArray[index - 1])
+        parametersArray = _.filter(originalPathArray, function(o) {
+          return o.indexOf('{') !== -1
+        }).map(item => item.replace(/[{}]/g, ''))
+
+        // 补位
+        if (syntheticalConfig.repeat) {
+          if (syntheticalConfig.restful) {
+            requestFunctionName = `${method}_${pathArray.join('_')}`
+            if (parametersArray.length) {
+              for (let i = 0; i < parametersArray.length; i++) {
+                const element = parametersArray[i]
+                requestFunctionName = `${requestFunctionName}_by_${element}`
+              }
+            }
+          } else {
+            requestFunctionName = pathArray[pathLength - 1]
+          }
+          requestFunctionName = changeCase.camelCase(requestFunctionName)
+        } else {
+          requestFunctionName = syntheticalConfig.restful
+            ? changeCase.camelCase(`${method}_${pathArray[pathLength - 1]}`)
+            : changeCase.camelCase(pathArray[pathLength - 1])
+        }
       } else {
-        requestFunctionName = syntheticalConfig.restful
-          ? changeCase.camelCase(
-              `${method}_${extendedInterfaceInfo.parsedPath.name}`,
-            )
-          : changeCase.camelCase(extendedInterfaceInfo.parsedPath.name)
+        // 补位
+        if (syntheticalConfig.repeat) {
+          requestFunctionName = syntheticalConfig.restful
+            ? changeCase.camelCase(`${method}_${pathArray.join('_')}`)
+            : changeCase.camelCase(extendedInterfaceInfo.parsedPath.name)
+        } else {
+          requestFunctionName = syntheticalConfig.restful
+            ? changeCase.camelCase(
+                `${method}_${extendedInterfaceInfo.parsedPath.name}`,
+              )
+            : changeCase.camelCase(extendedInterfaceInfo.parsedPath.name)
+        }
       }
     }
 
@@ -622,8 +655,10 @@ export class Generator {
 
     const isNotEmptyBody =
       requestBodyJsonSchema &&
-      requestBodyJsonSchema.properties &&
-      Object.keys(requestBodyJsonSchema.properties).length > 0
+      ((requestBodyJsonSchema.type === 'object' &&
+        requestBodyJsonSchema.properties &&
+        Object.keys(requestBodyJsonSchema.properties).length > 0) ||
+        requestBodyJsonSchema.type === 'array')
 
     // Params
     const requestParamsTypeName = isFunction(
@@ -744,15 +779,16 @@ export class Generator {
 
     // 如果params不存在，直接是path，如果存在，需要组装
     let requestPath = ''
+
     if (isNotEmptyParams) {
-      const paramNames = (
-        extendedInterfaceInfo.req_params /* istanbul ignore next */ || []
-      ).map(item => item.name)
-      const orginalPath = pathArray.slice(0, index).filter(item => item !== '')
-      requestPath = orginalPath.join('/')
-      if (paramNames.length) {
-        for (let i = 0; i < paramNames.length; i++) {
-          const element = paramNames[i]
+      // const paramNames = (
+      //   extendedInterfaceInfo.req_params.sort(compare) /* istanbul ignore next */ || []
+      // ).map(item => item.name)
+
+      requestPath = pathArray.join('/')
+      if (parametersArray.length) {
+        for (let i = 0; i < parametersArray.length; i++) {
+          const element = parametersArray[i]
           requestPath = `${requestPath}/\${params.${element}}`
         }
       }
@@ -760,6 +796,9 @@ export class Generator {
     } else {
       requestPath = JSON.stringify(extendedInterfaceInfo.path)
     }
+
+    // 路径前缀
+    const prefix = syntheticalConfig.prefix
 
     return dedent`
       /**
@@ -786,7 +825,9 @@ export class Generator {
           : dedent`
             /* **请求函数** */
             export async function ${requestFunctionName}(${requestParameters}): Promise<any> {
-              return request(\`${requestPath.replace(/"/g, '')}\`, {
+              return request(\`${
+                prefix ? `${prefix}/` : ''
+              }${requestPath.replace(/"/g, '')}\`, {
 								method: Method.${extendedInterfaceInfo.method},
 								${isNotEmptyQuery ? 'params: query,' : ''}
 								${isNotEmptyBody ? 'data: body,' : ''}

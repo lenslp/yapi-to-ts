@@ -127,6 +127,88 @@ export function processJsonSchema<T extends JSONSchema4>(jsonSchema: T): T {
 }
 
 /**
+ * 原地处理 JSONSchema。
+ *
+ * @param jsonSchema 待处理的 JSONSchema
+ * @returns 处理后的 JSONSchema
+ */
+export function processJsonSchemaForResponse<T extends JSONSchema4>(
+  jsonSchema: T,
+): T {
+  /* istanbul ignore if */
+  if (!isObject(jsonSchema)) return jsonSchema
+
+  // 去除 title 和 id，防止 json-schema-to-typescript 提取它们作为接口名
+  delete jsonSchema.title
+  delete jsonSchema.id
+
+  // 忽略数组长度限制
+  delete jsonSchema.minItems
+  delete jsonSchema.maxItems
+
+  // 将 additionalProperties 设为 false
+  jsonSchema.additionalProperties = false
+
+  // 删除通过 swagger 导入时未剔除的 ref
+  delete jsonSchema.$ref
+  delete jsonSchema.$$ref
+
+  // Mock.toJSONSchema 产生的 properties 为数组，然而 JSONSchema4 的 properties 为对象
+  if (isArray(jsonSchema.properties)) {
+    jsonSchema.properties = (jsonSchema.properties as JSONSchema4[]).reduce<
+      Defined<JSONSchema4['properties']>
+    >((props, js) => {
+      props[js.name] = js
+      return props
+    }, {})
+  }
+
+  // 移除字段名称首尾空格
+  if (jsonSchema.properties) {
+    forOwn(jsonSchema.properties, (_, prop) => {
+      const propDef = jsonSchema.properties![prop]
+      delete jsonSchema.properties![prop]
+      jsonSchema.properties![(prop as string).trim()] = propDef
+    })
+    const requiredArray: string[] = []
+    for (const key in jsonSchema.properties) {
+      if (Object.prototype.hasOwnProperty.call(jsonSchema.properties, key)) {
+        requiredArray.push(key)
+      }
+    }
+    jsonSchema.required = requiredArray
+    // jsonSchema.required && jsonSchema.required.map(prop => prop.trim())
+  }
+
+  // 继续处理对象的子元素
+  if (jsonSchema.properties) {
+    forOwn(jsonSchema.properties, processJsonSchemaForResponse)
+  }
+
+  // 继续处理数组的子元素
+  if (jsonSchema.items) {
+    castArray(jsonSchema.items).forEach(processJsonSchemaForResponse)
+  }
+
+  // 处理 oneOf
+  if (jsonSchema.oneOf) {
+    jsonSchema.oneOf.forEach(processJsonSchemaForResponse)
+  }
+
+  // 处理 anyOf
+  if (jsonSchema.anyOf) {
+    jsonSchema.anyOf.forEach(processJsonSchemaForResponse)
+  }
+
+  // 处理 allOf
+  if (jsonSchema.allOf) {
+    jsonSchema.allOf.forEach(processJsonSchemaForResponse)
+  }
+
+  return jsonSchema
+}
+
+/**
  * 将 JSONSchema 字符串转为 JSONSchema 对象。
  *
  * @param str 要转换的 JSONSchema 字符串
@@ -134,6 +216,18 @@ export function processJsonSchema<T extends JSONSchema4>(jsonSchema: T): T {
  */
 export function jsonSchemaStringToJsonSchema(str: string): JSONSchema4 {
   return processJsonSchema(JSON.parse(str))
+}
+
+/**
+ * 将 JSONSchema 字符串转为 JSONSchema 对象。
+ *
+ * @param str 要转换的 JSONSchema 字符串
+ * @returns 转换后的 JSONSchema 对象
+ */
+export function jsonSchemaStringToJsonSchemaForResponese(
+  str: string,
+): JSONSchema4 {
+  return processJsonSchemaForResponse(JSON.parse(str))
 }
 
 /**
@@ -336,7 +430,7 @@ export function getResponseDataJsonSchema(
     case ResponseBodyType.json:
       if (interfaceInfo.res_body) {
         jsonSchema = interfaceInfo.res_body_is_json_schema
-          ? jsonSchemaStringToJsonSchema(interfaceInfo.res_body)
+          ? jsonSchemaStringToJsonSchemaForResponese(interfaceInfo.res_body)
           : mockjsTemplateToJsonSchema(JSON5.parse(interfaceInfo.res_body))
       }
       break
@@ -495,4 +589,19 @@ export function getRequestParamsJsonSchema(
   }
 
   return jsonSchema
+}
+
+/**
+ * 生成随机数
+ * @param len {Number} 随机数位数，默认32位
+ * @return {String} 随机数
+ */
+export function randomString(len = 8) {
+  const chars = 'abcdefhijkmnopqrstwxyz'
+  const maxPos = chars.length
+  let pwd = ''
+  for (let i = 0; i < len; i++) {
+    pwd += chars.charAt(Math.floor(Math.random() * maxPos))
+  }
+  return pwd
 }

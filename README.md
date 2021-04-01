@@ -102,6 +102,32 @@ type Config = Servers
 3. 🌟 优化了 interface 逻辑
 4. 🌟 优化了无入参时，无需填写参数
 
+## V1.1.2 迭代
+
+1. ⭐ 增加 query 和 params 的 number 和 boolean 类型指定
+
+## V1.1.3 迭代
+
+1. ⭐ 增加 restful 风格下请求函数名重复处理
+
+## V1.1.4 迭代
+
+1. ⭐ 增加 param 使用 by 连接
+2. ⭐ 增加 prefix，使用于路径的前缀后端未填写的情况
+3. 🌟 优化省略 param 参数，以及 repeat 为 true 时采取所有的路径拼接为函数名
+
+## V1.1.5 迭代
+
+1. 🌟 优化了识别 body 内容为数组的情况，无法生成的问题
+
+## V1.1.6 迭代
+
+1. 🌟 Response 内全部字段必然是存在的
+
+## V1.1.7 迭代
+
+1. :bug: 修复多个 params 都时候顺序不固定都 bug
+
 ## 许可
 
 MIT (c) Zhao Yao
