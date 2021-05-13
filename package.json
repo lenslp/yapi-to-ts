@@ -1,6 +1,6 @@
 {
-  "name": "end-type-to-front-type",
-  "version": "1.1.7",
+  "name": "yapi-to-ts",
+  "version": "1.0.5",
   "description": "根据 YApi 的接口定义生成 TypeScript/JavaScript 的接口类型及其请求函数代码。",
   "keywords": [
     "yapi",
@@ -9,15 +9,15 @@
   ],
   "license": "MIT",
   "author": {
-    "name": "zhaoyao",
-    "email": "zhaoyao@uni-ubi.com"
+    "name": "lens94",
+    "email": "18937708209@163.com"
   },
   "sideEffects": false,
   "main": "lib/cjs/index.js",
   "module": "lib/esm/index.js",
   "types": "lib/esm/index.d.ts",
   "bin": {
-    "moonPower": "lib/cjs/cli.js"
+    "ytt": "lib/cjs/cli.js"
   },
   "files": [
     "lib"

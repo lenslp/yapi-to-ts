@@ -26,7 +26,6 @@ TSNode.register({
     esModuleInterop: true,
     allowSyntheticDefaultImports: true,
     importHelpers: false,
-    // 转换 js，支持在 moonPower.config.js 里使用最新语法
     allowJs: true,
     lib: ['es2017'],
   },
@@ -36,8 +35,8 @@ export async function run(
   /* istanbul ignore next */
   cwd: string = process.cwd(),
 ) {
-  const configTSFile = path.join(cwd, 'moonPower.config.ts')
-  const configJSFile = path.join(cwd, 'moonPower.config.js')
+  const configTSFile = path.join(cwd, 'ytt.config.ts')
+  const configJSFile = path.join(cwd, 'ytt.config.js')
   const configTSFileExist = await fs.pathExists(configTSFile)
   const configJSFileExist =
     !configTSFileExist && (await fs.pathExists(configJSFile))
@@ -50,12 +49,12 @@ export async function run(
     console.log(
       `\n${dedent`
         # 用法
-          初始化配置文件: moonPower makeUp
-          生成代码: moonPower
-          查看帮助: moonPower help
+          初始化配置文件: ytt makeUp
+          生成代码: ytt
+          查看帮助: ytt help
       `}\n`,
     )
-  } else if (cmd === 'makeup') {
+  } else if (cmd === 'makeUp') {
     if (configFileExist) {
       consola.info(`检测到配置文件: ${configFile}`)
       const answers = await prompt({
@@ -70,18 +69,18 @@ export async function run(
       name: 'configFileType',
       type: 'select',
       choices: [
-        { title: 'TypeScript(moonPower.config.ts)', value: 'ts' },
-        { title: 'JavaScript(moonPower.config.js)', value: 'js' },
+        { title: 'TypeScript(ytt.config.ts)', value: 'ts' },
+        { title: 'JavaScript(ytt.config.js)', value: 'js' },
       ],
     })
     await fs.outputFile(
       answers.configFileType === 'js' ? configJSFile : configTSFile,
       dedent`
-        import { defineConfig } from 'end-type-to-front-type'
+        import { defineConfig } from 'yapi-to-ts'
 
         export default defineConfig([
           {
-            serverUrl: 'http://yapi.uniubi.com:3000/',
+            serverUrl: 'http://yapi.xxx.com:3000/',
             typesOnly: false,
             prefix: '', // 路径前缀
             restful: true, // 是否是restful风格的接口

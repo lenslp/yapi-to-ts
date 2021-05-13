@@ -9,5 +9,5 @@ Thumbs.db
 /lib
 /docs
 /coverage
-moonPower.config.*
+ytt.*
 package-lock.json

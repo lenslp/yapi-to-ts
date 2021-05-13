@@ -311,7 +311,7 @@ export class Generator {
               requestHookMakerFilePath,
               dedent`
                 import { useState, useEffect } from 'react'
-                import { RequestConfig } from 'end-type-to-front-type'
+                import { RequestConfig } from 'yapi-to-ts'
                 import { Request } from ${JSON.stringify(
                   getNormalizedRelativePath(
                     requestHookMakerFilePath,
@@ -355,10 +355,9 @@ export class Generator {
 
         // 始终写入主文件
         const rawOutputContent = dedent`
-          /* tslint-disable */
           /* eslint-disable */
 
-          /* 该文件由 end-type-to-front-type 自动生成，请勿直接修改！！！ */
+          /* 该文件由 yapi-to-ts 自动生成，请勿直接修改！！！ */
 
           ${
             syntheticalConfig.typesOnly
@@ -366,7 +365,7 @@ export class Generator {
               : dedent`
                 // @ts-ignore
                 // prettier-ignore
-                import { Method, RequestBodyType, ResponseBodyType, RequestConfig, RequestFunctionRestArgs, FileData, prepare } from 'end-type-to-front-type'
+                import { Method, RequestBodyType, ResponseBodyType, RequestConfig, RequestFunctionRestArgs, FileData, prepare } from 'yapi-to-ts'
                 import request from '@/utils/request';
                 // @ts-ignore
                 ${
